@@ -68,6 +68,9 @@ def distance(img):
     # Known_distance(centimeters),
     # known_width(centimeters)
     focal_length = FOCAL_LENGTH
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+	img = cv2.GaussianBlur(img, (5, 5), 0)
+	img = cv2.Canny(img, 35, 125)
     print(focal_length)
 
     target_object_real_width = 8  # Real width of the object we're trying to detect
