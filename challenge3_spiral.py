@@ -8,12 +8,30 @@ import cv2
 from io import BytesIO
 from PIL import Image
 
+def take_picture(camera):
+    stream = BytesIO()
+    time.sleep(0.3)
+    camera.capture(stream, format='jpeg')
+    #time.sleep(0.5)
+    stream.seek(0)
+    img = Image.open(stream)
+    img = np.array(img)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    return img
+
+def turn_right(px, turn_time, turn_angle):
+    px.set_dir_servo_angle(turn_angle)
+    px.forward(0.22)
+    time.sleep(turn_time)
+    px.forward(0)
+    px.set_dir_servo_angle(0)
+    return
 
 def main():
     turn_angle = 30
-    step_time = 1.2
-    total_line_steps = 5
-    line_steps_remaining = 5
+    step_time = 1.5
+    total_line_steps = 4
+    line_steps_remaining = total_line_steps
     turns = -1
     # count number of turns towards each
     # direction while object not found
@@ -31,16 +49,8 @@ def main():
             found_object = False
             prev_dist = 100
             while True:
-                stream = BytesIO()
-                time.sleep(0.5)
-                camera.capture(stream, format='jpeg')
-                time.sleep(0.5)
-                stream.seek(0)
-                img = Image.open(stream)
-                img = np.array(img)
-                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+                img = take_picture(camera)
 
-                #img = frame.array
                 dist, x, y = distance(img, show=True)
                 print("Distance", dist)
                 print("x: ", x)
@@ -74,11 +84,7 @@ def main():
                             if line_steps_remaining == 0:
                                 # Turning 90 degrees right
                                 print("Turning")
-                                px.set_dir_servo_angle(turn_angle)
-                                px.forward(0.22)
-                                time.sleep(1.3)
-                                px.forward(0)
-                                px.set_dir_servo_angle(0)
+                                turn_right(px, 1.3, turn_angle)
                                 line_steps_remaining = total_line_steps
                                 if turns % 2 == 0:
                                     step_time -= 0.1
@@ -88,6 +94,12 @@ def main():
                                 time.sleep(step_time)
                                 px.forward(0)
                                 line_steps_remaining -= 1
+                            px.set_camera_servo1_angle(90)
+                            img = take_picture(camera)
+                            dist_right, x_right, y_right = distance(img, show=True)
+                            if dist_right is not None:
+                                turn_right(px, 1.6 + (x_right - 80) * 0.007, turn_angle)
+                            px.set_camera_servo1_angle(0)
                     elif dist > 35:
                         px.forward(0.22)
                         time.sleep(0.8)
