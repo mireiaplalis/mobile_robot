@@ -4,6 +4,8 @@ import time
 
 import cv2
 import numpy as np
+from PIL import Image
+import psutil
 
 classes = None
 
@@ -18,7 +20,7 @@ def focal_length_finder():
     # centimeter
     reference_object_distance = 14.7
 
-    reference_object_real_width = 8  # Real width of the reference object
+    reference_object_real_width = 9.7  # Real width of the reference object
 
     # reading reference_image from directory
     ref_image = cv2.imread("ref.jpg")
@@ -62,18 +64,15 @@ def draw_prediction(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
     cv2.putText(img, label, (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 
-def distance(img):
+def distance(img, show=False):
     # get the focal by calling "Focal_Length_Finder"
     # face width in reference(pixels),
     # Known_distance(centimeters),
     # known_width(centimeters)
     focal_length = FOCAL_LENGTH
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-	img = cv2.GaussianBlur(img, (5, 5), 0)
-	img = cv2.Canny(img, 35, 125)
     print(focal_length)
 
-    target_object_real_width = 8  # Real width of the object we're trying to detect
+    target_object_real_width = 9.7  # Real width of the object we're trying to detect
 
     cfg = 'yolov3.cfg'
     weights = 'yolov3.weights'
@@ -90,6 +89,10 @@ def distance(img):
     outs = net.forward(get_output_layers(net))
     print("Forward time: ", time.time() - start)
 
+    # hide image
+    for proc in psutil.process_iter():
+        if proc.name() == "display":
+            proc.kill()
     # initialization
     class_ids = []
     confidences = []
@@ -113,7 +116,7 @@ def distance(img):
                 y = center_y - h / 2
                 class_ids.append(class_id)
                 confidences.append(float(confidence))
-                boxes.append([x, y, w, h])
+                boxes.append([center_x, center_y, x, y, w, h])
 
             # apply non-max suppression
     indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
@@ -123,10 +126,12 @@ def distance(img):
     for i in indices:
         i = i[0]
         box = boxes[i]
-        x = box[0]
-        y = box[1]
-        w = box[2]
-        h = box[3]
+        center_x = box[0]
+        center_y = box[1]
+        x = box[2]
+        y = box[3]
+        w = box[4]
+        h = box[5]
         print('box', x, y, w, h)
         # finding the distance by calling function
         # Distance finder function need
@@ -137,5 +142,15 @@ def distance(img):
         distance = distance_finder(
             focal_length, target_object_real_width, w)
         print('Distance', distance)
-        return distance, x , y
+        if show:
+            try:
+                draw_prediction(img, class_ids[i], confidences[i], round(x), round(y), round(x+w), round(y+h))
+            except:
+                import pdb; pdb.set_trace()
+            pil = Image.fromarray(np.uint8(img))
+            pil.show()
+        return distance, center_x , center_y
+    if show:
+        pil = Image.fromarray(np.uint8(img))
+        pil.show()
     return None, None, None

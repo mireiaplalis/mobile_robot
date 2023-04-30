@@ -10,7 +10,11 @@ from PIL import Image
 
 
 def main():
-    turn_angle = 15
+    turn_angle = 30
+    step_time = 1.2
+    total_line_steps = 5
+    line_steps_remaining = 5
+    turns = -1
     # count number of turns towards each
     # direction while object not found
     index = 0
@@ -25,6 +29,7 @@ def main():
             time.sleep(2)
 
             found_object = False
+            prev_dist = 100
             while True:
                 stream = BytesIO()
                 time.sleep(0.5)
@@ -37,12 +42,12 @@ def main():
 
                 #img = frame.array
                 dist, x, y = distance(img, show=True)
-
                 print("Distance", dist)
                 print("x: ", x)
                 print("y: ", y)
                 if dist is not None:
                     found_object = True
+                    prev_dist = dist
                 
                 if x is not None and x < 70:
                     px.set_dir_servo_angle(-turn_angle)
@@ -58,20 +63,31 @@ def main():
                     px.set_dir_servo_angle(0)
                 else:    
                     if dist is None:
-                        if found_object:
+                        if found_object and prev_dist < 10:
                             px.forward(0.22)
                             time.sleep(0.2)
                             px.forward(0)
                             break
                         else:
-                            # Searching
-                            if index % 4 == 0:
-                                direction *= -1
-                            index += 1
-                            px.set_dir_servo_angle(direction * turn_angle)
-                            px.forward(0.22)
-                            time.sleep(0.9)
-                            px.forward(0)
+                            found_object = False
+                            # Searching in spiral
+                            if line_steps_remaining == 0:
+                                # Turning 90 degrees right
+                                print("Turning")
+                                px.set_dir_servo_angle(turn_angle)
+                                px.forward(0.22)
+                                time.sleep(1.3)
+                                px.forward(0)
+                                px.set_dir_servo_angle(0)
+                                line_steps_remaining = total_line_steps
+                                if turns % 2 == 0:
+                                    step_time -= 0.1
+                                turns += 1
+                            else:
+                                px.forward(0.22)
+                                time.sleep(step_time)
+                                px.forward(0)
+                                line_steps_remaining -= 1
                     elif dist > 35:
                         px.forward(0.22)
                         time.sleep(0.8)
@@ -92,5 +108,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
