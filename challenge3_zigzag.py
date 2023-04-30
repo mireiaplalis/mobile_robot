@@ -19,20 +19,32 @@ def take_picture(camera):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     return img
 
-def turn_right(px, turn_time, turn_angle):
-    px.set_dir_servo_angle(turn_angle)
+def look_and_turn(px, camera, side):
+    px.set_camera_servo1_angle(side * 90)
+    img = take_picture(camera)
+    dist_s, x, y = distance(img, show=True)
+    print("dist here", dist_s)
+    turn_time = 1.4 if side == 1 else 0.6
+    if dist_s is not None:
+        print("should turn now")
+        turn_in_place(px, turn_time, side)
+    px.set_camera_servo1_angle(0)
+    return dist_s is not None
+
+def turn(px, turn_time, turn_angle, side):
+    px.set_dir_servo_angle(turn_angle*side)
     px.forward(0.22)
     time.sleep(turn_time)
     px.forward(0)
     px.set_dir_servo_angle(0)
     return
 
-def turn_in_place(px):
+def turn_in_place(px, turn_time, side=1):
     px.forward(-0.22)
     time.sleep(0.5)
-    px.set_dir_servo_angle(30)
+    px.set_dir_servo_angle(side * 30)
     px.forward(0.22)
-    time.sleep(1.5)
+    time.sleep(turn_time)
     px.set_dir_servo_angle(0)
     px.forward(-0.22)
     time.sleep(0.5)
@@ -43,8 +55,10 @@ def main():
     turn_angle = 30
     step_time = 1.5
     total_line_steps = 4
-    line_steps_remaining = total_line_steps
-    turns = -1
+    line_steps_remaining = 5
+    turns = 0
+    sides = [1, -1, 1, -1]
+    look = ["both", "both", "both", "both", "both"]
     # count number of turns towards each
     # direction while object not found
     index = 0
@@ -92,27 +106,28 @@ def main():
                             break
                         else:
                             found_object = False
-                            # Searching in spiral
+                            # Searching
                             if line_steps_remaining == 0:
                                 # Turning 90 degrees right
                                 print("Turning")
-                                turn_right(px, 1.3, turn_angle)
+                                if turns > 3:
+                                    break
+                                
+                                turn(px, 2.1  - sides[turns] * 0.15, turn_angle, sides[turns])
                                 line_steps_remaining = total_line_steps
-                                if turns % 2 == 0:
-                                    step_time -= 0.1
                                 turns += 1
                             else:
                                 px.forward(0.22)
                                 time.sleep(step_time)
                                 px.forward(0)
                                 line_steps_remaining -= 1
-                            px.set_camera_servo1_angle(90)
-                            img = take_picture(camera)
-                            dist_right, x_right, y_right = distance(img, show=True)
-                            if dist_right is not None:
-                                turn_in_place(px)
-                                #turn_right(px, 1.6 + (x_right - 80) * 0.007, turn_angle)
-                            px.set_camera_servo1_angle(0)
+                            found = False
+                            print(look[turns])
+                            if look[turns] == "right" or look[turns] == "both":
+                                found = look_and_turn(px, camera, 1)
+                            if look[turns] == "left" or (look[turns] == "both" and not found):
+                                look_and_turn(px, camera, -1)
+                            
                     elif dist > 35:
                         px.forward(0.22)
                         time.sleep(0.8)
@@ -133,6 +148,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
 
 

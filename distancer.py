@@ -149,7 +149,10 @@ def distance(img, show=False):
                 import pdb; pdb.set_trace()
             pil = Image.fromarray(np.uint8(img))
             pil.show()
-        return distance, center_x , center_y
+        if class_ids[i] == 41:
+            return distance, center_x , center_y
+        else:
+            return None, None, None
     if show:
         pil = Image.fromarray(np.uint8(img))
         pil.show()
