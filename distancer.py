@@ -173,6 +173,7 @@ def distance_v8(image):
 
     best_conf = 0
     dist = None
+    x, y = None, None
     # Return the distance to the box with the highest confidence.
     for i, b in enumerate(x[0].boxes.xywh):
         w = b[2]
@@ -180,5 +181,6 @@ def distance_v8(image):
         if conf > best_conf:
             best_conf = conf
             dist = distance_finder(FOCAL_LENGTH, target_object_real_width, w)
+            x, y = b[0], b[1]
 
-    return dist
+    return dist, x, y
