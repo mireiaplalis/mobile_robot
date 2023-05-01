@@ -4,8 +4,9 @@ import time
 
 import cv2
 import numpy as np
-from PIL import Image
 import psutil
+from PIL import Image
+from ultralytics import YOLO
 
 classes = None
 
@@ -13,6 +14,7 @@ with open('yolov3.txt', 'r') as f:
     classes = [line.strip() for line in f.readlines()]
 
 COLORS = np.random.uniform(0, 255, size=(len(classes), 3))
+yolov8 = YOLO("yolov8n.pt")  # load a pretrained YOLOv8n model
 
 
 def focal_length_finder():
@@ -144,16 +146,39 @@ def distance(img, show=False):
         print('Distance', distance)
         if show:
             try:
-                draw_prediction(img, class_ids[i], confidences[i], round(x), round(y), round(x+w), round(y+h))
+                draw_prediction(img, class_ids[i], confidences[i], round(x), round(y), round(x + w), round(y + h))
             except:
-                import pdb; pdb.set_trace()
+                import pdb;
+                pdb.set_trace()
             pil = Image.fromarray(np.uint8(img))
             pil.show()
         if class_ids[i] == 41:
-            return distance, center_x , center_y
+            return distance, center_x, center_y
         else:
             return None, None, None
     if show:
         pil = Image.fromarray(np.uint8(img))
         pil.show()
     return None, None, None
+
+
+def distance_v8(image):
+    target_object_real_width = 9.7
+    start = time.time()
+    x = yolov8.predict(image)  # predict on an image
+    print("v8 Prediction took", time.time() - start, "seconds")
+
+    plot = x[0].plot()
+    cv2.imshow("Box", plot)
+
+    best_conf = 0
+    dist = None
+    # Return the distance to the box with the highest confidence.
+    for i, b in enumerate(x[0].boxes.xywh):
+        w = b[2]
+        conf = x[0].boxes.conf[i]
+        if conf > best_conf:
+            best_conf = conf
+            dist = distance_finder(FOCAL_LENGTH, target_object_real_width, w)
+
+    return dist

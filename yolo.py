@@ -1,12 +1,14 @@
 import cv2
 from ultralytics import YOLO
+import time
 
 model = YOLO("yolov8n.pt")  # load a pretrained YOLOv8n model
 
-image = cv2.imread("near.jpg")
+image = cv2.imread("far.jpg")
 
+start = time.time()
 x = model.predict(image)  # predict on an image
-
+print("Prediction took", time.time() - start)
 for r in x:
     print(f"Detected {len(x)} objects")
     for b in r.boxes.xyxy:
