@@ -165,22 +165,22 @@ def distance(img, show=False):
 def distance_v8(image):
     target_object_real_width = 9.7
     start = time.time()
-    x = yolov8.predict(image)  # predict on an image
+    result = yolov8.predict(image)  # predict on an image
     print("v8 Prediction took", time.time() - start, "seconds")
 
-    plot = x[0].plot()
+    plot = result[0].plot()
     cv2.imshow("Box", plot)
 
     best_conf = 0
     dist = None
     x, y = None, None
     # Return the distance to the box with the highest confidence.
-    for i, b in enumerate(x[0].boxes.xywh):
+    for i, b in enumerate(result[0].boxes.xywh):
         w = b[2]
-        conf = x[0].boxes.conf[i]
+        conf = result[0].boxes.conf[i]
         if conf > best_conf:
             best_conf = conf
             dist = distance_finder(FOCAL_LENGTH, target_object_real_width, w)
             x, y = b[0], b[1]
 
-    return dist, x, y
+    return dist.item(), x.item(), y.item()
