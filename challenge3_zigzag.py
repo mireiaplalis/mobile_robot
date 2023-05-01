@@ -20,16 +20,27 @@ def take_picture(camera):
     return img
 
 def look_and_turn(px, camera, side):
-    px.set_camera_servo1_angle(side * 90)
-    img = take_picture(camera)
-    dist_s, x, y = distance(img, show=True)
-    print("dist here", dist_s)
-    turn_time = 1.4 if side == 1 else 0.6
-    if dist_s is not None:
+    angles = np.linspace(-45, 90, 5)
+    images = []
+    for angle in angles:
+        px.set_camera_servo1_angle(angle)
+        images.append(take_picture(camera))
+    images = np.concatenate(images, axis=0)
+    distances, xs, ys = distance(images, show=False)
+    good_angle_idx = None
+    min_dist = np.inf
+    for i, d in enumerate(distances):
+        if d is not None and d < min_dist:
+            min_dist = d
+            good_angle_idx = i
+    
+    turn_times = np.linspace(-0.6, 1.4, 5)
+    if good_angle_idx is not None:
         print("should turn now")
-        turn_in_place(px, turn_time, side)
+        good_turn_time = turn_times(good_angle_idx)
+        turn_in_place(px, np.abs(good_turn_time), np.sign(good_turn_time))
     px.set_camera_servo1_angle(0)
-    return dist_s is not None
+    return good_angle_idx is not None
 
 def turn(px, turn_time, turn_angle, side):
     px.set_dir_servo_angle(turn_angle*side)
@@ -113,7 +124,7 @@ def main():
                                 if turns > 3:
                                     break
                                 
-                                turn(px, 2.1  - sides[turns] * 0.15, turn_angle, sides[turns])
+                                turn(px, 2.1  - sides[turns] * 0.2, turn_angle, sides[turns])
                                 line_steps_remaining = total_line_steps
                                 turns += 1
                             else:

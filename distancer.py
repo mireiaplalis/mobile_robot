@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import psutil
 from PIL import Image
-from ultralytics import YOLO
+#from ultralytics import YOLO
 
 classes = None
 
@@ -14,7 +14,7 @@ with open('yolov3.txt', 'r') as f:
     classes = [line.strip() for line in f.readlines()]
 
 COLORS = np.random.uniform(0, 255, size=(len(classes), 3))
-yolov8 = YOLO("yolov8n.pt")  # load a pretrained YOLOv8n model
+#yolov8 = YOLO("yolov8n.pt")  # load a pretrained YOLOv8n model
 
 
 def focal_length_finder():
@@ -161,7 +161,7 @@ def distance(img, show=False):
         pil.show()
     return None, None, None
 
-
+'''
 def distance_v8(image):
     target_object_real_width = 9.7
     start = time.time()
@@ -184,3 +184,4 @@ def distance_v8(image):
             x, y = b[0], b[1]
 
     return dist.item(), x.item(), y.item()
+'''
