@@ -3,7 +3,7 @@ from ultralytics import YOLO
 
 model = YOLO("yolov8n.pt")  # load a pretrained YOLOv8n model
 
-image = cv2.imread("far.jpg")
+image = cv2.imread("near.jpg")
 
 x = model.predict(image)  # predict on an image
 
@@ -15,7 +15,7 @@ for r in x:
         start = int(box[0]), int(box[1])
         end = (int(box[2]), int(box[3]))
         print(start, end)
-        cv2.rectangle(image, start, end, (0, 255, 0), 5)
-cv2.imshow("Box", image)
+plot = x[0].plot()
+cv2.imshow("Box", plot)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
