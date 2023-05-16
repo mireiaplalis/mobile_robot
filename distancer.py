@@ -77,7 +77,6 @@ def distance(img, show=False):
 
     net = cv2.dnn.readNet(weights, cfg)
 
-    cv2.imwrite('ref.jpg', img)
     img_width = img.shape[1]
     img_height = img.shape[0]
     blob = cv2.dnn.blobFromImage(img, scale, (img.shape[0], img.shape[1]), (0, 0), True, crop=False)
@@ -134,6 +133,9 @@ def distance(img, show=False):
             draw_prediction(img, class_ids[i], confidences[i], round(x), 
                             round(y), round(x + w), round(y + h))
         if class_ids[i] not in excluded_ids:
+            if show:
+                pil = Image.fromarray(np.uint8(img))
+                pil.show()
             return distance, center_x, center_y
         
     if show:

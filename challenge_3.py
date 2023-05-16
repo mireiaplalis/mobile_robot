@@ -61,7 +61,7 @@ def main():
                         # We are too close to the object and we 
                         # stop recognizing it -> slightly forward and stop
                         if found_object and prev_dist < 15:
-                            move_forward(0.25)
+                            move_forward(px, 0.25)
                             break
                         else:
                             found_object = False
@@ -77,7 +77,7 @@ def main():
                                 turns += 1
                             else:
                                 # Perform a step
-                                move_forward(step_time)
+                                move_forward(px, step_time)
                                 line_steps_remaining -= 1
                             found = False
                             # Look right and if not found look left. 
