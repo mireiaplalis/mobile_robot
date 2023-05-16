@@ -10,6 +10,9 @@ from PIL import Image
 
 classes = None
 
+excluded_ids = [0, 56, 60, 13, 57]
+# person, chair, dining table, bench, couch
+
 with open('yolov3.txt', 'r') as f:
     classes = [line.strip() for line in f.readlines()]
 
@@ -74,7 +77,7 @@ def distance(img, show=False):
     focal_length = FOCAL_LENGTH
     print(focal_length)
 
-    target_object_real_width = 9.7  # Real width of the object we're trying to detect
+    target_object_real_width = 7  # Real width of the object we're trying to detect
 
     cfg = 'yolov3.cfg'
     weights = 'yolov3.weights'
@@ -152,10 +155,8 @@ def distance(img, show=False):
                 pdb.set_trace()
             pil = Image.fromarray(np.uint8(img))
             pil.show()
-        if class_ids[i] == 41:
+        if class_ids[i] not in excluded_ids:
             return distance, center_x, center_y
-        else:
-            return None, None, None
     if show:
         pil = Image.fromarray(np.uint8(img))
         pil.show()

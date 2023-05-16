@@ -5,6 +5,19 @@ from picamera import PiCamera
 from picamera.array import PiRGBArray
 from distancer import distance
 import cv2
+from io import BytesIO
+from PIL import Image
+
+def take_picture(camera):
+    stream = BytesIO()
+    time.sleep(0.5)
+    camera.capture(stream, format='jpeg')
+    #time.sleep(0.5)
+    stream.seek(0)
+    img = Image.open(stream)
+    img = np.array(img)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    return img
 
 def main():
     right_angle = 30
@@ -21,8 +34,8 @@ def main():
             time.sleep(2)
 
             found_object = False
-            for frame in camera.capture_continuous(rawCapture, format="bgr",use_video_port=False): # use_video_port=True
-                img = frame.array
+            while True:
+                img = take_picture(camera)
                 dist, x, y = distance(img, show=True)
 
                 print("Distance", dist)
@@ -30,8 +43,9 @@ def main():
                 print("y: ", y)
                 if dist is not None:
                     found_object = True
-                
-                if x is not None and x < 70:
+                    prev_dist = dist
+
+                if x is not None and x < 60:
                     px.set_dir_servo_angle(left_angle)
                     px.forward(20)
                     forward_time += 0.05
@@ -46,12 +60,12 @@ def main():
                     px.forward(0)
                     px.set_dir_servo_angle(0)
                 else:    
-                    if dist is None and not found_object:
+                    if dist is None and (not found_object or prev_dist > 15):
                         px.forward(0.2)
                         time.sleep(0.5)
                         forward_time += 0.5
                         px.forward(0)
-                    elif dist is not None and dist > 20:
+                    elif dist is not None and dist > 26:
                         px.forward(0.2)
                         time.sleep(0.4)
                         forward_time += 0.4
