@@ -1,23 +1,10 @@
 from picarx import Picarx
 import time
-import numpy as np
 from picamera import PiCamera
 from picamera.array import PiRGBArray
 from distancer import distance
-import cv2
-from io import BytesIO
-from PIL import Image
+from Helper import take_picture, move_forward
 
-def take_picture(camera):
-    stream = BytesIO()
-    time.sleep(0.5)
-    camera.capture(stream, format='jpeg')
-    #time.sleep(0.5)
-    stream.seek(0)
-    img = Image.open(stream)
-    img = np.array(img)
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    return img
 
 def main():
     right_angle = 30
@@ -25,68 +12,69 @@ def main():
     try:
         px = Picarx()
         finished = False
+        # Counts how much time we have gone forward
         forward_time = 0
+        # Total forward time to move 200cm
         total_time = 3.95
         with PiCamera() as camera:
+            # Camera configuration
             camera.resolution = (160, 128)  
             camera.framerate = 24
             rawCapture = PiRGBArray(camera, size=camera.resolution)  
             time.sleep(2)
 
+            # Whether the robot has found the object at any previous time
             found_object = False
-            while True:
+            while not finished:
                 img = take_picture(camera)
                 dist, x, y = distance(img, show=True)
 
                 print("Distance", dist)
-                print("x: ", x)
-                print("y: ", y)
+
+                # Object has been recognized in the image
                 if dist is not None:
                     found_object = True
                     prev_dist = dist
 
-                if x is not None and x < 60:
+                middle = camera.resolution[0] / 2
+                margin = 10
+                # If object in the left of the image move left
+                if x is not None and x < middle - margin:
                     px.set_dir_servo_angle(left_angle)
-                    px.forward(20)
+                    move_forward(px, 0.1)
                     forward_time += 0.05
-                    time.sleep(0.1)
-                    px.forward(0)
                     px.set_dir_servo_angle(0)
-                elif x is not None and x > 90:
+                # If object in the right of the image move right
+                elif x is not None and x > middle + margin:
                     px.set_dir_servo_angle(right_angle)
-                    px.forward(20)
+                    move_forward(px, 0.1)
                     forward_time += 0.05
-                    time.sleep(0.1)
-                    px.forward(0)
                     px.set_dir_servo_angle(0)
+                # If object in front move forward
                 else:    
+                    # If object hasn't been recognized yet
                     if dist is None and (not found_object or prev_dist > 15):
-                        px.forward(0.2)
-                        time.sleep(0.5)
+                        move_forward(px, 0.5)
                         forward_time += 0.5
-                        px.forward(0)
+                    # If we are sill far from object go forward
                     elif dist is not None and dist > 26:
-                        px.forward(0.2)
-                        time.sleep(0.4)
+                        move_forward(px, 0.4)
                         forward_time += 0.4
-                        px.forward(0)
+                    # If we are close to object we avoid it and finish the 200cm
                     else:
                         print("starting turn")
                         px.set_dir_servo_angle(right_angle)
-                        px.forward(20)
-                        time.sleep(0.7)
+                        move_forward(px, 0.7)
                         px.set_dir_servo_angle(left_angle)
-                        time.sleep(1.3)
+                        move_forward(px, 1.4)
                         px.set_dir_servo_angle(right_angle)
-                        time.sleep(0.75)
+                        move_forward(px, 0.7)
                         px.set_dir_servo_angle(0)
                         time.sleep(total_time-forward_time)
                         finished = True
                         break
 
                 rawCapture.truncate(0)
-                if finished:
-                    break
     finally:
         px.forward(0)
 
